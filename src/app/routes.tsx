@@ -1,0 +1,81 @@
+import {
+  Navigate,
+  Route,
+  Routes,
+} from 'react-router-dom';
+
+import { useAuth } from '../auth/AuthContext';
+import ProtectedRoute from '../auth/ProtectedRoute';
+import PublicRoute from '../auth/PublicRoute';
+
+import Landing from '../features/landing/Landing';
+import Login from '../features/login/Login';
+import Dashboard from '../features/dashboard/Dashboard';
+import Settings from '../features/settings/Settings';
+
+function HomeRoute() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (user) {
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    );
+  }
+
+  return <Landing />;
+}
+
+export default function AppRoutes() {
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={<HomeRoute />}
+      />
+
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to="/"
+            replace
+          />
+        }
+      />
+    </Routes>
+  );
+}
