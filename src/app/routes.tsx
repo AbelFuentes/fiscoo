@@ -1,17 +1,13 @@
-import {
-  Navigate,
-  Route,
-  Routes,
-} from 'react-router-dom';
-
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import ProtectedRoute from '../auth/ProtectedRoute';
 import PublicRoute from '../auth/PublicRoute';
-
+import AppLayout from '../layouts/AppLayout';
 import Landing from '../features/landing/Landing';
 import Login from '../features/login/Login';
 import Dashboard from '../features/dashboard/Dashboard';
 import Settings from '../features/settings/Settings';
+import Clients from '../features/clients/Clients';
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -21,12 +17,7 @@ function HomeRoute() {
   }
 
   if (user) {
-    return (
-      <Navigate
-        to="/dashboard"
-        replace
-      />
-    );
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Landing />;
@@ -35,10 +26,7 @@ function HomeRoute() {
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route
-        path="/"
-        element={<HomeRoute />}
-      />
+      <Route path="/" element={<HomeRoute />} />
 
       <Route
         path="/login"
@@ -50,31 +38,33 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <AppLayout>
+              <div />
+            </AppLayout>
           </ProtectedRoute>
         }
-      />
+      >
+        <Route
+          path="/dashboard"
+          element={<Dashboard />}
+        />
 
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/clients"
+          element={<Clients />}
+        />
+
+        <Route
+          path="/settings"
+          element={<Settings />}
+        />
+      </Route>
 
       <Route
         path="*"
-        element={
-          <Navigate
-            to="/"
-            replace
-          />
-        }
+        element={<Navigate to="/" replace />}
       />
     </Routes>
   );

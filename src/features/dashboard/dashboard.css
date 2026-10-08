@@ -1,16 +1,3 @@
-.dashboard-header-brand {
-  font-size: 1.1rem;
-}
-
-.dashboard-header-search {
-  max-width: 22rem;
-  flex: 1;
-}
-
-.dashboard-sidebar {
-  gap: 0.25rem;
-}
-
 .dashboard-content-header {
   display: flex;
   justify-content: space-between;
@@ -68,9 +55,4 @@
 
 .dashboard-goals {
   max-width: 34rem;
-}
-
-.dashboard-footer {
-  color: var(--ui-muted);
-  font-size: 0.85rem;
 }

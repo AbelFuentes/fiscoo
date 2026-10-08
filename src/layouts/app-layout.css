@@ -1,0 +1,21 @@
+.app-layout-brand {
+  font-size: 1.1rem;
+}
+
+.app-layout-search {
+  max-width: 22rem;
+  flex: 1;
+}
+
+.app-layout-header-spacer {
+  flex: 1;
+}
+
+.app-layout-sidebar {
+  gap: 0.25rem;
+}
+
+.app-layout-footer {
+  color: var(--ui-muted);
+  font-size: 0.85rem;
+}
