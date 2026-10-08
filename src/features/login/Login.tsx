@@ -62,11 +62,6 @@ export default function Login() {
 
   return (
     <div className="lg">
-      <ui-theme-switch
-        className="corner"
-        size="sm"
-      />
-
       <ui-card
         style={{ width: 'min(26rem,100%)' }}
         padding="lg"

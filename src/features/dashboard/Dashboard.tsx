@@ -14,17 +14,31 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
-  const tableRef = useRef<HTMLElement>(null);
-  const paginationRef = useRef<HTMLElement>(null);
-  const infoRef = useRef<HTMLSpanElement>(null);
-  const dropdownRef = useRef<HTMLElement>(null);
+  const tableRef =
+    useRef<HTMLElement>(null);
+
+  const paginationRef =
+    useRef<HTMLElement>(null);
+
+  const infoRef =
+    useRef<HTMLSpanElement>(null);
+
+  const dropdownRef =
+    useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const table = tableRef.current as any;
-    const pagination = paginationRef.current as any;
-    const dropdown = dropdownRef.current;
+    const table =
+      tableRef.current as any;
 
-    if (!table || !pagination) return;
+    const pagination =
+      paginationRef.current as any;
+
+    const dropdown =
+      dropdownRef.current;
+
+    if (!table || !pagination) {
+      return;
+    }
 
     const columns = [
       {
@@ -36,8 +50,13 @@ export default function Dashboard() {
         key: 'customer',
         label: 'Cliente',
         sortable: true,
-        render: (row: (typeof orders)[number]) => {
-          const element = document.createElement('div');
+        render: (
+          row: (typeof orders)[number],
+        ) => {
+          const element =
+            document.createElement(
+              'div',
+            );
 
           element.style.cssText =
             'display:flex;align-items:center;gap:.7em';
@@ -56,7 +75,8 @@ export default function Dashboard() {
             row.customer,
           );
 
-          name.textContent = row.customer;
+          name.textContent =
+            row.customer;
 
           return element;
         },
@@ -64,17 +84,26 @@ export default function Dashboard() {
       {
         key: 'status',
         label: 'Estado',
-        render: (row: (typeof orders)[number]) => {
+        render: (
+          row: (typeof orders)[number],
+        ) => {
           const badge =
-            document.createElement('ui-badge');
+            document.createElement(
+              'ui-badge',
+            );
 
           badge.setAttribute(
             'tone',
             tones[row.status],
           );
 
-          badge.setAttribute('dot', '');
-          badge.textContent = row.status;
+          badge.setAttribute(
+            'dot',
+            '',
+          );
+
+          badge.textContent =
+            row.status;
 
           return badge;
         },
@@ -84,17 +113,23 @@ export default function Dashboard() {
         label: 'Total',
         sortable: true,
         align: 'right',
-        render: (row: (typeof orders)[number]) =>
+        render: (
+          row: (typeof orders)[number],
+        ) =>
           `$${row.total}`,
       },
     ];
 
     table.columns = columns;
 
-    const show = (page: number) => {
+    const show = (
+      page: number,
+    ) => {
       table.rows = orders.slice(
-        (page - 1) * TABLE_PAGE_SIZE,
-        page * TABLE_PAGE_SIZE,
+        (page - 1) *
+          TABLE_PAGE_SIZE,
+        page *
+          TABLE_PAGE_SIZE,
       );
 
       if (infoRef.current) {
@@ -106,18 +141,29 @@ export default function Dashboard() {
       }
     };
 
-    const handlePageChange = (event: Event) => {
+    const handlePageChange = (
+      event: Event,
+    ) => {
       const customEvent =
-        event as CustomEvent<{ page: number }>;
+        event as CustomEvent<{
+          page: number;
+        }>;
 
-      show(customEvent.detail.page);
+      show(
+        customEvent.detail.page,
+      );
     };
 
-    const handleMenuSelect = async (event: Event) => {
+    const handleMenuSelect = async (
+      event: Event,
+    ) => {
       const customEvent =
-        event as CustomEvent<{ value: string }>;
+        event as CustomEvent<{
+          value: string;
+        }>;
 
-      const value = customEvent.detail.value;
+      const value =
+        customEvent.detail.value;
 
       if (value === 'logout') {
         try {
@@ -139,7 +185,9 @@ export default function Dashboard() {
         return;
       }
 
-      toast.info(`Acción: ${value}`);
+      toast.info(
+        `Acción: ${value}`,
+      );
     };
 
     pagination.addEventListener(
@@ -165,7 +213,10 @@ export default function Dashboard() {
         handleMenuSelect,
       );
     };
-  }, [navigate, signOut]);
+  }, [
+    navigate,
+    signOut,
+  ]);
 
   const displayName =
     user?.user_metadata?.full_name ||
@@ -200,7 +251,9 @@ export default function Dashboard() {
       />
 
       <ui-dropdown
-        ref={dropdownRef as any}
+        ref={
+          dropdownRef as any
+        }
         slot="header"
         placement="bottom-end"
       >
@@ -333,7 +386,9 @@ export default function Dashboard() {
                 </span>
 
                 <ui-badge
-                  tone={stat.tone as any}
+                  tone={
+                    stat.tone as any
+                  }
                   size="sm"
                 >
                   {stat.delta}
@@ -341,7 +396,9 @@ export default function Dashboard() {
               </div>
 
               <ui-progress
-                value={stat.progress}
+                value={
+                  stat.progress
+                }
                 size="sm"
                 className="dashboard-stat-progress"
               />
@@ -359,7 +416,9 @@ export default function Dashboard() {
             data-label="Pedidos"
           >
             <ui-table
-              ref={tableRef as any}
+              ref={
+                tableRef as any
+              }
             />
 
             <div className="dashboard-table-footer">
@@ -369,7 +428,9 @@ export default function Dashboard() {
               />
 
               <ui-pagination
-                ref={paginationRef as any}
+                ref={
+                  paginationRef as any
+                }
                 page={1}
                 pages={Math.ceil(
                   orders.length /

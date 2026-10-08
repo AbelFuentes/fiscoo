@@ -1,80 +1,195 @@
-import { useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
+import { usePreferences } from '../../preferences/PreferencesContext';
 import { toast } from '@abelfuentes/ui-controls/toast';
 import {
   ACCENTS,
   DANGER_STYLE,
 } from './settings.constants';
+import type { UserPreferencesInput } from './userPreferences';
 import './settings.css';
+
+type SettingsTab =
+  | 'profile'
+  | 'notifications'
+  | 'appearance'
+  | 'danger';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const fullName =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    '';
-
-  const nameParts = fullName.trim().split(/\s+/);
-
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ');
+  const {
+    preferences,
+    loading: loadingPreferences,
+    updatePreferences,
+  } = usePreferences();
 
   const email = user?.email || '';
 
-  const [loading, setLoading] = useState(false);
-  const [deleteValue, setDeleteValue] = useState('');
+  const [draft, setDraft] =
+    useState<UserPreferencesInput | null>(null);
 
-  const canDelete = deleteValue === 'ELIMINAR';
+  const [loading, setLoading] =
+    useState(false);
 
-  const handleSave = () => {
-    setLoading(true);
+  const [activeTab, setActiveTab] =
+    useState<SettingsTab>('profile');
 
-    setTimeout(() => {
-      setLoading(false);
+  const [deleteValue, setDeleteValue] =
+    useState('');
 
-      toast.success('Cambios guardados');
-    }, 900);
-  };
+  const canDelete =
+    deleteValue === 'ELIMINAR';
 
-  const handleThemeChange = (event: Event) => {
-    const target = event.target as HTMLElement & {
-      value?: string;
-    };
-
-    const value = target.value;
-
-    if (value === 'light' || value === 'dark') {
-      document.documentElement.dataset.theme = value;
-      document.documentElement.style.colorScheme = value;
-      localStorage.setItem('ui-theme', value);
-    }
-  };
-
-  const handleAccentChange = (event: Event) => {
-    const target = event.target as HTMLElement & {
-      value?: keyof typeof ACCENTS;
-    };
-
-    const value = target.value;
-
-    if (!value || !ACCENTS[value]) {
+  useEffect(() => {
+    if (!preferences) {
+      setDraft(null);
       return;
     }
 
-    const [accent, accent2] = ACCENTS[value];
+    setDraft({
+      user_id: preferences.user_id,
+      first_name: preferences.first_name,
+      last_name: preferences.last_name,
+      bio: preferences.bio,
+      language: preferences.language,
+      avatar_url: preferences.avatar_url,
+      theme: preferences.theme,
+      accent: preferences.accent,
+      email_notifications:
+        preferences.email_notifications,
+      push_notifications:
+        preferences.push_notifications,
+      mention_notifications:
+        preferences.mention_notifications,
+      activity_summary:
+        preferences.activity_summary,
+    });
+  }, [preferences]);
+
+  const updateDraft = <
+    K extends keyof UserPreferencesInput,
+  >(
+    key: K,
+    value: UserPreferencesInput[K],
+  ) => {
+    setDraft((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [key]: value,
+      };
+    });
+  };
+
+  const handleSave = async () => {
+    if (!draft) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await updatePreferences({
+        first_name: draft.first_name,
+        last_name: draft.last_name,
+        bio: draft.bio,
+        language: draft.language,
+        avatar_url: draft.avatar_url,
+        accent: draft.accent,
+        email_notifications:
+          draft.email_notifications,
+        push_notifications:
+          draft.push_notifications,
+        mention_notifications:
+          draft.mention_notifications,
+        activity_summary:
+          draft.activity_summary,
+      });
+
+      toast.success(
+        'Cambios guardados',
+      );
+    } catch (error) {
+      console.error(
+        'Error saving user preferences:',
+        error,
+      );
+
+      toast.danger(
+        'No se pudieron guardar los cambios.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccentChange = (
+    event: Event,
+  ) => {
+    const target =
+      event.target as HTMLElement & {
+        value?: string;
+      };
+
+    const value = target.value;
+
+    if (
+      value !== 'indigo' &&
+      value !== 'green' &&
+      value !== 'orange'
+    ) {
+      return;
+    }
+
+    updateDraft(
+      'accent',
+      value,
+    );
+
+    const [
+      accentColor,
+      accentColor2,
+    ] = ACCENTS[value];
 
     document.documentElement.style.setProperty(
       '--ui-accent',
-      accent,
+      accentColor,
     );
 
     document.documentElement.style.setProperty(
       '--ui-accent-2',
-      accent2,
+      accentColor2,
     );
+  };
+
+  const handleTabChange = (
+    event: Event,
+  ) => {
+    const customEvent =
+      event as CustomEvent<{
+        value?: string;
+      }>;
+
+    const value =
+      customEvent.detail?.value;
+
+    if (
+      value === 'profile' ||
+      value === 'notifications' ||
+      value === 'appearance' ||
+      value === 'danger'
+    ) {
+      setActiveTab(value);
+    }
   };
 
   const handleDelete = () => {
@@ -86,6 +201,47 @@ export default function Settings() {
     );
   };
 
+  if (
+    loadingPreferences ||
+    !draft
+  ) {
+    return (
+      <div className="st">
+        <ui-stack gap="lg">
+          <div>
+            <ui-button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                navigate('/dashboard')
+              }
+            >
+              ← Volver al resumen
+            </ui-button>
+          </div>
+
+          <div>
+            <h1>Ajustes</h1>
+            <p>
+              Cargando tus preferencias...
+            </p>
+          </div>
+        </ui-stack>
+      </div>
+    );
+  }
+
+  const fullName =
+    [
+      draft.first_name,
+      draft.last_name,
+    ]
+      .filter(Boolean)
+      .join(' ') || email;
+
+  const showSaveButton =
+    activeTab !== 'danger';
+
   return (
     <div className="st">
       <ui-stack gap="lg">
@@ -93,7 +249,9 @@ export default function Settings() {
           <ui-button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/dashboard')}
+            onClick={() =>
+              navigate('/dashboard')
+            }
           >
             ← Volver al resumen
           </ui-button>
@@ -109,6 +267,7 @@ export default function Settings() {
         <ui-tabs
           value="profile"
           label="Ajustes"
+          onchange={handleTabChange}
         >
           <section
             data-tab="profile"
@@ -117,7 +276,7 @@ export default function Settings() {
             <ui-stack gap="lg">
               <div className="st-profile-header">
                 <ui-avatar
-                  name={fullName || email}
+                  name={fullName}
                   size="lg"
                   status="online"
                 />
@@ -133,23 +292,67 @@ export default function Settings() {
               <ui-grid min="14rem">
                 <ui-input
                   label="Nombre"
-                  value={firstName}
+                  value={draft.first_name}
+                  onInput={(event) => {
+                    const target =
+                      event.currentTarget as HTMLElement & {
+                        value?: string;
+                      };
+
+                    updateDraft(
+                      'first_name',
+                      target.value || '',
+                    );
+                  }}
                 />
 
                 <ui-input
                   label="Apellido"
-                  value={lastName}
+                  value={draft.last_name}
+                  onInput={(event) => {
+                    const target =
+                      event.currentTarget as HTMLElement & {
+                        value?: string;
+                      };
+
+                    updateDraft(
+                      'last_name',
+                      target.value || '',
+                    );
+                  }}
                 />
 
                 <ui-input
                   label="Correo"
                   type="email"
                   value={email}
+                  readonly
                 />
 
                 <ui-select
+                  disabled
                   label="Idioma"
-                  value="es"
+                  value={draft.language}
+                  onchange={(event) => {
+                    const target =
+                      event.target as HTMLElement & {
+                        value?: string;
+                      };
+
+                    const value =
+                      target.value;
+
+                    if (
+                      value === 'es' ||
+                      value === 'en' ||
+                      value === 'pt'
+                    ) {
+                      updateDraft(
+                        'language',
+                        value,
+                      );
+                    }
+                  }}
                 >
                   <option value="es">
                     Español
@@ -172,20 +375,19 @@ export default function Settings() {
                 rows={2}
                 maxrows={5}
                 hint="Aparece en tu perfil público"
+                value={draft.bio}
+                onInput={(event) => {
+                  const target =
+                    event.currentTarget as HTMLElement & {
+                      value?: string;
+                    };
+
+                  updateDraft(
+                    'bio',
+                    target.value || '',
+                  );
+                }}
               />
-
-              <div className="actions">
-                <ui-button variant="ghost">
-                  Cancelar
-                </ui-button>
-
-                <ui-button
-                  loading={loading}
-                  onClick={handleSave}
-                >
-                  Guardar cambios
-                </ui-button>
-              </div>
             </ui-stack>
           </section>
 
@@ -203,8 +405,16 @@ export default function Settings() {
                 </div>
 
                 <ui-toggle
-                  checked
+                  checked={
+                    draft.email_notifications
+                  }
                   label="Correo"
+                  onchange={() =>
+                    updateDraft(
+                      'email_notifications',
+                      !draft.email_notifications,
+                    )
+                  }
                 />
               </div>
 
@@ -216,7 +426,18 @@ export default function Settings() {
                   </small>
                 </div>
 
-                <ui-toggle label="Push" />
+                <ui-toggle
+                  checked={
+                    draft.push_notifications
+                  }
+                  label="Push"
+                  onchange={() =>
+                    updateDraft(
+                      'push_notifications',
+                      !draft.push_notifications,
+                    )
+                  }
+                />
               </div>
 
               <div className="row">
@@ -228,8 +449,16 @@ export default function Settings() {
                 </div>
 
                 <ui-toggle
-                  checked
+                  checked={
+                    draft.mention_notifications
+                  }
                   label="Menciones"
+                  onchange={() =>
+                    updateDraft(
+                      'mention_notifications',
+                      !draft.mention_notifications,
+                    )
+                  }
                 />
               </div>
             </div>
@@ -245,9 +474,31 @@ export default function Settings() {
               </strong>
 
               <ui-radio-group
-                value="weekly"
+                value={
+                  draft.activity_summary
+                }
                 orientation="horizontal"
                 label="Frecuencia"
+                onchange={(event) => {
+                  const target =
+                    event.target as HTMLElement & {
+                      value?: string;
+                    };
+
+                  const value =
+                    target.value;
+
+                  if (
+                    value === 'daily' ||
+                    value === 'weekly' ||
+                    value === 'never'
+                  ) {
+                    updateDraft(
+                      'activity_summary',
+                      value,
+                    );
+                  }
+                }}
               >
                 <ui-radio value="daily">
                   Diario
@@ -269,42 +520,18 @@ export default function Settings() {
             data-label="Apariencia"
           >
             <ui-stack gap="lg">
-              <div className="row">
-                <div>
-                  Tema
-                  <small>
-                    Claro u oscuro
-                  </small>
-                </div>
-
-                <ui-segmented
-                  value={
-                    document.documentElement.dataset
-                      .theme || 'light'
-                  }
-                  label="Tema"
-                  onchange={handleThemeChange}
-                >
-                  <option value="light">
-                    Claro
-                  </option>
-
-                  <option value="dark">
-                    Oscuro
-                  </option>
-                </ui-segmented>
-              </div>
-
               <ui-stack gap="sm">
                 <strong>
                   Color de acento
                 </strong>
 
                 <ui-radio-group
-                  value="indigo"
+                  value={draft.accent}
                   orientation="horizontal"
                   label="Acento"
-                  onchange={handleAccentChange}
+                  onchange={
+                    handleAccentChange
+                  }
                 >
                   <ui-radio value="indigo">
                     Índigo
@@ -337,21 +564,26 @@ export default function Settings() {
               </ui-alert>
 
               <div>
-                <ui-button
-                  style={DANGER_STYLE}
-                  onClick={() => {
-                    const dialog =
-                      document.querySelector(
-                        'ui-dialog',
-                      ) as HTMLElement & {
-                        show?: () => void;
-                      };
-
-                    dialog?.show?.();
-                  }}
+                <ui-tooltip
+                  text="Esta acción esta bloqueada en el demo"
                 >
-                  Eliminar cuenta
-                </ui-button>
+                  <ui-button
+                    disabled
+                    style={DANGER_STYLE}
+                    onClick={() => {
+                      const dialog =
+                        document.querySelector(
+                          'ui-dialog',
+                        ) as HTMLElement & {
+                          show?: () => void;
+                        };
+
+                      dialog?.show?.();
+                    }}
+                  >
+                    Eliminar cuenta
+                  </ui-button>
+                </ui-tooltip>
               </div>
 
               <ui-dialog size="sm">
@@ -412,6 +644,27 @@ export default function Settings() {
             </ui-stack>
           </section>
         </ui-tabs>
+
+        {showSaveButton && (
+          <div className="st-save-bar">
+            <div>
+              <strong>
+                ¿Todo listo?
+              </strong>
+
+              <span>
+                Guarda tus cambios para actualizar tus preferencias.
+              </span>
+            </div>
+
+            <ui-button
+              loading={loading}
+              onClick={handleSave}
+            >
+              Guardar cambios
+            </ui-button>
+          </div>
+        )}
       </ui-stack>
     </div>
   );

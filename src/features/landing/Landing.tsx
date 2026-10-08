@@ -1,9 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {
   LANDING_AVATARS,
-  LANDING_FEATURES,
-  LANDING_LOGOS,
-  LANDING_PREVIEW_STATS,
   LANDING_TESTIMONIALS,
 } from './landing.constants';
 import './landing.css';
@@ -16,8 +13,6 @@ export default function Landing() {
       <nav className="landing-nav">
         <div className="container landing-nav-inner">
           <span className="landing-logo">Fiscoo</span>
-
-          <ui-theme-switch size="sm" />
 
           <div className="landing-nav-actions">
             <ui-button

@@ -44,3 +44,40 @@
   align-items: center;
   gap: 1rem;
 }
+
+.st-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--ui-border, rgba(127, 127, 127, 0.2));
+  border-radius: 0.875rem;
+  background: var(--ui-surface, rgba(127, 127, 127, 0.05));
+}
+
+.st-save-bar > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.st-save-bar strong {
+  font-size: 0.95rem;
+}
+
+.st-save-bar span {
+  font-size: 0.85rem;
+  color: var(--ui-text-muted, #6b7280);
+}
+
+@media (max-width: 640px) {
+  .st-save-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .st-save-bar ui-button {
+    width: 100%;
+  }
+}

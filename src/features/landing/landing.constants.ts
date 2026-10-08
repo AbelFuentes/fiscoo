@@ -11,27 +11,6 @@ export interface LandingTestimonial {
   avatar: string;
 }
 
-export const LANDING_FEATURES: LandingFeature[] = [
-  {
-    title: 'Facturación sin complicaciones',
-    description:
-      'Emite y organiza tus facturas desde un solo lugar, sin procesos innecesarios.',
-    icon: '↗',
-  },
-  {
-    title: 'Todo bajo control',
-    description:
-      'Visualiza ingresos, gastos y movimientos para entender realmente tu negocio.',
-    icon: '◫',
-  },
-  {
-    title: 'Clientes organizados',
-    description:
-      'Mantén toda la información de tus clientes disponible cuando la necesites.',
-    icon: '◎',
-  },
-];
-
 export const LANDING_TESTIMONIALS: LandingTestimonial[] = [
   {
     name: 'Ana López',
@@ -62,33 +41,4 @@ export const LANDING_AVATARS = [
   'Carla Gil',
   'Dan Paz',
   'Eva Mar',
-];
-
-export const LANDING_PREVIEW_STATS = [
-  {
-    label: 'Ingresos',
-    value: '$48,200',
-    delta: '+12%',
-    tone: 'success',
-  },
-  {
-    label: 'Facturas',
-    value: '1,284',
-    delta: '+4%',
-    tone: 'success',
-  },
-  {
-    label: 'Clientes',
-    value: '892',
-    delta: '+2%',
-    tone: 'accent',
-  },
-];
-
-export const LANDING_LOGOS = [
-  'Acme',
-  'Nexa',
-  'Orbit',
-  'North',
-  'Vertex',
 ];
