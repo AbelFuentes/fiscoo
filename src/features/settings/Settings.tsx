@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import {
   DANGER_STYLE,
 } from './settings.constants';
 import type { UserPreferencesInput } from './userPreferences';
+import { uploadUserAvatar } from './userPreferences';
 import './settings.css';
 
 type SettingsTab =
@@ -37,11 +39,17 @@ export default function Settings() {
   const [loading, setLoading] =
     useState(false);
 
+  const [uploadingAvatar, setUploadingAvatar] =
+    useState(false);
+
   const [activeTab, setActiveTab] =
     useState<SettingsTab>('profile');
 
   const [deleteValue, setDeleteValue] =
     useState('');
+
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(null);
 
   const canDelete =
     deleteValue === 'ELIMINAR';
@@ -129,6 +137,88 @@ export default function Settings() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = '';
+
+    if (!file || !user || !draft) {
+      return;
+    }
+
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.danger(
+        'Solo puedes subir imágenes JPG, PNG o WebP.',
+      );
+
+      return;
+    }
+
+    const maxSize =
+      2 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      toast.danger(
+        'La imagen no puede superar los 2 MB.',
+      );
+
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+
+      const avatarUrl =
+        await uploadUserAvatar(
+          user.id,
+          file,
+        );
+
+      await updatePreferences({
+        avatar_url: avatarUrl,
+      });
+
+      setDraft((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          avatar_url: avatarUrl,
+        };
+      });
+
+      toast.success(
+        'Foto actualizada',
+      );
+    } catch (error) {
+      console.error(
+        'Error uploading avatar:',
+        error,
+      );
+
+      toast.danger(
+        'No se pudo actualizar la foto.',
+      );
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -277,16 +367,29 @@ export default function Settings() {
               <div className="st-profile-header">
                 <ui-avatar
                   name={fullName}
+                  src={draft.avatar_url || undefined}
                   size="lg"
                   status="online"
                 />
 
-                <ui-button
-                  variant="outline"
-                  size="sm"
-                >
-                  Cambiar foto
-                </ui-button>
+                <div className="st-avatar-actions">
+                  <ui-button
+                    variant="outline"
+                    size="sm"
+                    loading={uploadingAvatar}
+                    onClick={handleAvatarClick}
+                  >
+                    Cambiar foto
+                  </ui-button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                    onChange={handleAvatarChange}
+                  />
+                </div>
               </div>
 
               <ui-grid min="14rem">
@@ -371,7 +474,6 @@ export default function Settings() {
               <ui-textarea
                 label="Biografía"
                 maxlength={160}
-                autosize
                 rows={2}
                 maxrows={5}
                 hint="Aparece en tu perfil público"

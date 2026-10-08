@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@abelfuentes/ui-controls/toast';
 import { useAuth } from '../../auth/AuthContext';
+import { usePreferences } from '../../preferences/PreferencesContext';
 import {
   orders,
   stats,
@@ -13,6 +14,7 @@ import './dashboard.css';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { preferences } = usePreferences();
 
   const tableRef =
     useRef<HTMLElement>(null);
@@ -218,10 +220,22 @@ export default function Dashboard() {
     signOut,
   ]);
 
+  const firstName =
+    preferences?.first_name?.trim() || '';
+
+  const lastName =
+    preferences?.last_name?.trim() || '';
+
+  const fullName =
+    `${firstName} ${lastName}`.trim();
+
   const displayName =
-    user?.user_metadata?.full_name ||
+    fullName ||
     user?.email ||
     'Usuario';
+
+  const avatarUrl =
+    preferences?.avatar_url || undefined;
 
   return (
     <ui-app-shell>
@@ -260,6 +274,7 @@ export default function Dashboard() {
         <ui-avatar
           slot="trigger"
           name={displayName}
+          src={avatarUrl}
           size="sm"
           status="online"
         />
