@@ -176,9 +176,15 @@ export default function AppLayout() {
         </ui-button>
 
         <ui-button
-          variant="ghost"
+          variant={
+            location.pathname.startsWith('/invoices')
+              ? 'soft'
+              : 'ghost'
+          }
           block
-          disabled
+          onClick={() =>
+            navigate('/invoices')
+          }
         >
           Facturas
         </ui-button>
