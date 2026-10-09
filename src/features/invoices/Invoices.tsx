@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import InvoiceForm from './InvoiceForm';
 import { getClients, type Client } from '../clients/userClients';
+import { useNavigate } from 'react-router-dom';
 import {
   createInvoice,
   getInvoices,
@@ -34,6 +35,9 @@ export default function Invoices() {
   const { user } = useAuth();
 
   const drawerRef = useRef<HTMLElement>(null);
+
+  const navigate = useNavigate();
+  const tableRef = useRef<HTMLElement>(null);
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,6 +130,42 @@ export default function Invoices() {
       })),
     [filteredInvoices],
   );
+
+  useEffect(() => {
+    const table = tableRef.current as any;
+
+    if (!table) {
+      return;
+    }
+
+    table.columns = [
+      { key: 'issued_at', label: 'Fecha' },
+      { key: 'direction', label: 'Tipo' },
+      { key: 'counterpart', label: 'Emisor / Receptor' },
+      { key: 'folio', label: 'Folio' },
+      { key: 'cfdi_uuid', label: 'UUID' },
+      { key: 'total', label: 'Total' },
+      {
+        key: 'actions',
+        label: '',
+        align: 'right',
+        render: (row: { id: string }) => {
+          const button = document.createElement('ui-button');
+
+          button.setAttribute('variant', 'ghost');
+          button.setAttribute('size', 'sm');
+          button.textContent = 'Ver';
+          button.addEventListener('click', () =>
+            navigate(`/invoices/${row.id}`),
+          );
+
+          return button;
+        },
+      },
+    ];
+
+    table.rows = rows;
+  }, [rows, loading, navigate]);
 
   const openCreateDrawer = () => {
     setSaveError(null);
@@ -286,17 +326,7 @@ export default function Invoices() {
                 </ui-stack>
               </div>
             ) : (
-              <ui-table
-                columns={[
-                  { key: 'issued_at', label: 'Fecha' },
-                  { key: 'direction', label: 'Tipo' },
-                  { key: 'counterpart', label: 'Emisor / Receptor' },
-                  { key: 'folio', label: 'Folio' },
-                  { key: 'cfdi_uuid', label: 'UUID' },
-                  { key: 'total', label: 'Total' },
-                ]}
-                rows={rows}
-              />
+              <ui-table ref={tableRef as any} />
             )}
           </>
         )}

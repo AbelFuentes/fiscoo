@@ -144,3 +144,35 @@ export async function deleteInvoice(
     throw error;
   }
 }
+
+export type InvoiceItem = {
+  id: string;
+  invoice_id: string;
+  user_id: string;
+  position: number;
+  description: string;
+  product_key: string | null;
+  unit_key: string | null;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+  tax_amount: number;
+};
+
+export async function getInvoiceItems(
+  userId: string,
+  invoiceId: string,
+): Promise<InvoiceItem[]> {
+  const { data, error } = await supabase
+    .from('invoice_items')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('invoice_id', invoiceId)
+    .order('position', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as InvoiceItem[];
+}

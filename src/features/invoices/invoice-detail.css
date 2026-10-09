@@ -1,0 +1,38 @@
+.invoice-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.invoice-detail-title {
+  margin: 0;
+}
+
+.invoice-detail-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.invoice-detail-fields {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.invoice-detail-field {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.invoice-detail-label {
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.invoice-detail-value {
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}

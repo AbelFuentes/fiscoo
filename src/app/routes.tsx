@@ -11,6 +11,7 @@ import Clients from '../features/clients/Clients';
 import Invoices from '../features/invoices/Invoices';
 import Expenses from '../features/expenses/Expenses';
 import Income from '../features/income/Income';
+import InvoiceDetail from '../features/invoices/InvoiceDetail';
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -77,6 +78,11 @@ export default function AppRoutes() {
         <Route
           path="/income"
           element={<Income />}
+        />
+
+        <Route
+          path="/invoices/:id"
+          element={<InvoiceDetail />}
         />
       </Route>
 
