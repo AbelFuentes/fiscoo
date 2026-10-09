@@ -1,92 +1,202 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-import { toast } from '@abelfuentes/ui-controls/toast';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext';
+import type { Invoice } from '../invoices/userInvoices';
 import {
   getDashboardSummary,
+  getRecentInvoices,
   type DashboardSummary,
 } from './dashboardSummary';
-import {
-  orders,
-  stats,
-  tones,
-  TABLE_PAGE_SIZE,
-} from './dashboard.constants';
 import './dashboard.css';
 
+type Stat = {
+  label: string;
+  value: string;
+  delta: string | null;
+  tone: 'success' | 'danger' | 'accent';
+  progress: number | null;
+};
+
+const formatMoney = (value: number) =>
+  new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const formatInvoiceMoney = (value: number, currency: string) =>
+  new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: currency || 'MXN',
+  }).format(value);
+
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+const percentChange = (current: number, previous: number) => {
+  if (previous === 0) {
+    return null;
+  }
+
+  const pct = Math.round(((current - previous) / previous) * 100);
+
+  return `${pct > 0 ? '+' : ''}${pct}%`;
+};
+
+const ratio = (value: number, max: number) =>
+  max > 0
+    ? Math.round(Math.min(Math.max(value / max, 0), 1) * 100)
+    : 0;
+
+const counterpartOf = (invoice: Invoice) =>
+  invoice.direction === 'received'
+    ? invoice.issuer_name || invoice.issuer_rfc
+    : invoice.receiver_name || invoice.receiver_rfc;
+
 export default function Dashboard() {
-  const [summary, setSummary] =
-    useState<DashboardSummary | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const tableRef =
-    useRef<HTMLElement>(null);
+  const tableRef = useRef<HTMLElement>(null);
 
-  const paginationRef =
-    useRef<HTMLElement>(null);
-
-  const infoRef =
-    useRef<HTMLSpanElement>(null);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [recent, setRecent] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
 
-    const loadSummary = async () => {
+    const load = async () => {
       try {
-        const data =
-          await getDashboardSummary();
+        setLoading(true);
+        setLoadError(null);
+
+        const [summaryData, recentData] = await Promise.all([
+          getDashboardSummary(),
+          getRecentInvoices(user.id),
+        ]);
 
         if (!mounted) return;
 
-        setSummary(data);
+        setSummary(summaryData);
+        setRecent(recentData);
       } catch (error) {
-        console.error(
-          'Error loading dashboard summary:',
-          error,
-        );
+        console.error('Error loading dashboard:', error);
 
         if (!mounted) return;
 
-        setSummary(null);
+        setLoadError('No se pudo cargar el resumen.');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    void loadSummary();
+    void load();
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user]);
+
+  const stats = useMemo<Stat[]>(() => {
+    if (!summary) {
+      return [];
+    }
+
+    const incomeDelta = percentChange(
+      summary.income_30d,
+      summary.income_prev_30d,
+    );
+    const expensesDelta = percentChange(
+      summary.expenses_30d,
+      summary.expenses_prev_30d,
+    );
+    const invoicesDelta = percentChange(
+      summary.invoices_30d,
+      summary.invoices_prev_30d,
+    );
+
+    const maxFlow = Math.max(summary.income_30d, summary.expenses_30d);
+    const balance = summary.income_30d - summary.expenses_30d;
+
+    return [
+      {
+        label: 'Ingresos',
+        value: formatMoney(summary.income_30d),
+        delta: incomeDelta,
+        tone: incomeDelta?.startsWith('-') ? 'danger' : 'success',
+        progress: ratio(summary.income_30d, maxFlow),
+      },
+      {
+        label: 'Gastos',
+        value: formatMoney(summary.expenses_30d),
+        delta: expensesDelta,
+        tone: expensesDelta?.startsWith('-') ? 'success' : 'danger',
+        progress: ratio(summary.expenses_30d, maxFlow),
+      },
+      {
+        label: 'Balance',
+        value: formatMoney(balance),
+        delta: null,
+        tone: balance < 0 ? 'danger' : 'accent',
+        progress: ratio(balance, summary.income_30d),
+      },
+      {
+        label: 'Facturas',
+        value: String(summary.invoices_30d),
+        delta: invoicesDelta,
+        tone: 'accent',
+        progress: ratio(
+          summary.invoices_30d,
+          Math.max(summary.invoices_30d, summary.invoices_prev_30d),
+        ),
+      },
+      {
+        label: 'Clientes',
+        value: String(summary.clients_count),
+        delta: null,
+        tone: 'accent',
+        progress: null,
+      },
+    ];
+  }, [summary]);
 
   useEffect(() => {
-    const table =
-      tableRef.current as any;
+    const table = tableRef.current as any;
 
-    const pagination =
-      paginationRef.current as any;
-
-    if (!table || !pagination) {
+    if (!table) {
       return;
     }
 
-    const columns = [
+    table.columns = [
       {
-        key: 'id',
-        label: 'Pedido',
+        key: 'issued_at',
+        label: 'Fecha',
         sortable: true,
+        render: (row: Invoice) => formatDate(row.issued_at),
       },
       {
-        key: 'customer',
-        label: 'Cliente',
-        sortable: true,
-        render: (
-          row: (typeof orders)[number],
-        ) => {
-          const element =
-            document.createElement(
-              'div',
-            );
+        key: 'counterpart',
+        label: 'Emisor / Receptor',
+        render: (row: Invoice) => {
+          const element = document.createElement('div');
 
           element.style.cssText =
             'display:flex;align-items:center;gap:.7em';
@@ -94,46 +204,48 @@ export default function Dashboard() {
           element.innerHTML =
             '<ui-avatar size="sm"></ui-avatar><span></span>';
 
-          const avatar =
-            element.firstElementChild as HTMLElement;
+          const avatar = element.firstElementChild as HTMLElement;
+          const name = element.lastElementChild as HTMLElement;
+          const label = counterpartOf(row);
 
-          const name =
-            element.lastElementChild as HTMLElement;
-
-          avatar.setAttribute(
-            'name',
-            row.customer,
-          );
-
-          name.textContent =
-            row.customer;
+          avatar.setAttribute('name', label);
+          name.textContent = label;
 
           return element;
         },
       },
       {
-        key: 'status',
-        label: 'Estado',
-        render: (
-          row: (typeof orders)[number],
-        ) => {
-          const badge =
-            document.createElement(
-              'ui-badge',
-            );
+        key: 'direction',
+        label: 'Tipo',
+        render: (row: Invoice) => {
+          const badge = document.createElement('ui-badge');
 
           badge.setAttribute(
             'tone',
-            tones[row.status],
-          );
-
-          badge.setAttribute(
-            'dot',
-            '',
+            row.direction === 'issued' ? 'success' : 'warning',
           );
 
           badge.textContent =
-            row.status;
+            row.direction === 'issued' ? 'Emitida' : 'Recibida';
+
+          return badge;
+        },
+      },
+      {
+        key: 'status',
+        label: 'Estado',
+        render: (row: Invoice) => {
+          const badge = document.createElement('ui-badge');
+
+          badge.setAttribute(
+            'tone',
+            row.status === 'active' ? 'success' : 'danger',
+          );
+
+          badge.setAttribute('dot', '');
+
+          badge.textContent =
+            row.status === 'active' ? 'Vigente' : 'Cancelada';
 
           return badge;
         },
@@ -143,214 +255,104 @@ export default function Dashboard() {
         label: 'Total',
         sortable: true,
         align: 'right',
-        render: (
-          row: (typeof orders)[number],
-        ) =>
-          `$${row.total}`,
+        render: (row: Invoice) =>
+          formatInvoiceMoney(row.total, row.currency),
       },
     ];
 
-    table.columns = columns;
-
-    const show = (
-      page: number,
-    ) => {
-      table.rows = orders.slice(
-        (page - 1) *
-          TABLE_PAGE_SIZE,
-        page *
-          TABLE_PAGE_SIZE,
-      );
-
-      if (infoRef.current) {
-        infoRef.current.textContent =
-          `${(page - 1) * TABLE_PAGE_SIZE + 1}–${Math.min(
-            page * TABLE_PAGE_SIZE,
-            orders.length,
-          )} de ${orders.length}`;
-      }
-    };
-
-    const handlePageChange = (
-      event: Event,
-    ) => {
-      const customEvent =
-        event as CustomEvent<{
-          page: number;
-        }>;
-
-      show(
-        customEvent.detail.page,
-      );
-    };
-
-    pagination.addEventListener(
-      'change',
-      handlePageChange,
-    );
-
-    show(1);
-
-    return () => {
-      pagination.removeEventListener(
-        'change',
-        handlePageChange,
-      );
-    };
-  }, []);
+    table.rows = recent;
+  }, [recent, loading]);
 
   return (
     <ui-stack gap="lg">
       <div className="dashboard-content-header">
         <div>
-          <h1 className="dashboard-title">
-            Resumen
-          </h1>
+          <h1 className="dashboard-title">Resumen</h1>
 
-          <p className="dashboard-subtitle">
-            Últimos 30 días
-          </p>
+          <p className="dashboard-subtitle">Últimos 30 días</p>
         </div>
-
-        <ui-button
-          onClick={() =>
-            toast.success(
-              'Pedido creado',
-              {
-                title: 'Listo',
-              },
-            )
-          }
-        >
-          <svg
-            slot="start"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-
-          Nuevo pedido
-        </ui-button>
       </div>
 
-      <ui-grid min="13rem">
-        {stats.map((stat) => {
-          const value =
-            stat.label === 'Clientes'
-              ? summary === null
-                ? '—'
-                : String(
-                    summary.clients_count,
-                  )
-              : stat.value;
+      {loadError && (
+        <ui-alert tone="danger">
+          <span slot="title">Ocurrió un problema</span>
 
-          return (
-            <ui-card
-              key={stat.label}
-              padding="sm"
-              variant="outlined"
-            >
-              <span
-                slot="header"
-                className="dashboard-stat-label"
-              >
-                {stat.label}
-              </span>
+          {loadError}
+        </ui-alert>
+      )}
 
-              <div className="dashboard-stat-content">
-                <span className="dashboard-stat-value">
-                  {value}
-                </span>
+      {!loadError && (
+        <>
+          <ui-grid min="13rem">
+            {loading
+              ? [0, 1, 2, 3, 4].map((index) => (
+                  <ui-skeleton key={index} height="6rem" />
+                ))
+              : stats.map((stat) => (
+                  <ui-card
+                    key={stat.label}
+                    padding="sm"
+                    variant="outlined"
+                  >
+                    <span
+                      slot="header"
+                      className="dashboard-stat-label"
+                    >
+                      {stat.label}
+                    </span>
 
-                <ui-badge
-                  tone={
-                    stat.tone as any
-                  }
-                  size="sm"
-                >
-                  {stat.delta}
-                </ui-badge>
-              </div>
+                    <div className="dashboard-stat-content">
+                      <span className="dashboard-stat-value">
+                        {stat.value}
+                      </span>
 
-              <ui-progress
-                value={
-                  stat.progress
-                }
+                      {stat.delta && (
+                        <ui-badge tone={stat.tone as any} size="sm">
+                          {stat.delta}
+                        </ui-badge>
+                      )}
+                    </div>
+
+                    {stat.progress !== null && (
+                      <ui-progress
+                        value={stat.progress}
+                        size="sm"
+                        className="dashboard-stat-progress"
+                      />
+                    )}
+                  </ui-card>
+                ))}
+          </ui-grid>
+
+          <ui-stack gap="md">
+            <div className="dashboard-content-header">
+              <h2>Facturas recientes</h2>
+
+              <ui-button
+                variant="ghost"
                 size="sm"
-                className="dashboard-stat-progress"
-              />
-            </ui-card>
-          );
-        })}
-      </ui-grid>
+                onClick={() => navigate('/invoices')}
+              >
+                Ver todas
+              </ui-button>
+            </div>
 
-      <ui-tabs
-        value="orders"
-        variant="pill"
-        label="Secciones"
-      >
-        <section
-          data-tab="orders"
-          data-label="Pedidos"
-        >
-          <ui-table
-            ref={
-              tableRef as any
-            }
-          />
-
-          <div className="dashboard-table-footer">
-            <span
-              ref={infoRef}
-              className="dashboard-table-info"
-            />
-
-            <ui-pagination
-              ref={
-                paginationRef as any
-              }
-              page={1}
-              pages={Math.ceil(
-                orders.length /
-                  TABLE_PAGE_SIZE,
-              )}
-              size="sm"
-            />
-          </div>
-        </section>
-
-        <section
-          data-tab="goals"
-          data-label="Metas"
-        >
-          <ui-stack
-            gap="lg"
-            className="dashboard-goals"
-          >
-            <ui-progress
-              value={72}
-              label="Ventas del mes"
-              show-value
-            />
-
-            <ui-progress
-              value={45}
-              label="Nuevos clientes"
-              show-value
-            />
-
-            <ui-progress
-              value={90}
-              label="Satisfacción"
-              show-value
-            />
+            {loading ? (
+              <ui-stack gap="sm">
+                <ui-skeleton height="3rem" />
+                <ui-skeleton height="3rem" />
+                <ui-skeleton height="3rem" />
+              </ui-stack>
+            ) : recent.length === 0 ? (
+              <p className="dashboard-subtitle">
+                Aún no tienes facturas registradas.
+              </p>
+            ) : (
+              <ui-table ref={tableRef as any} />
+            )}
           </ui-stack>
-        </section>
-      </ui-tabs>
+        </>
+      )}
     </ui-stack>
   );
 }
