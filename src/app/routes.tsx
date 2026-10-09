@@ -10,6 +10,7 @@ import Settings from '../features/settings/Settings';
 import Clients from '../features/clients/Clients';
 import Invoices from '../features/invoices/Invoices';
 import Expenses from '../features/expenses/Expenses';
+import Income from '../features/income/Income';
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -71,6 +72,11 @@ export default function AppRoutes() {
         <Route
           path="/expenses"
           element={<Expenses />}
+        />
+
+        <Route
+          path="/income"
+          element={<Income />}
         />
       </Route>
 

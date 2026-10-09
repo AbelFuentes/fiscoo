@@ -204,6 +204,20 @@ export default function AppLayout() {
         </ui-button>
 
         <ui-button
+          variant={
+            location.pathname.startsWith('/income')
+              ? 'soft'
+              : 'ghost'
+          }
+          block
+          onClick={() =>
+            navigate('/income')
+          }
+        >
+          Ingresos
+        </ui-button>
+
+        <ui-button
           variant="ghost"
           block
           disabled
