@@ -190,9 +190,15 @@ export default function AppLayout() {
         </ui-button>
 
         <ui-button
-          variant="ghost"
+          variant={
+            location.pathname.startsWith('/expenses')
+              ? 'soft'
+              : 'ghost'
+          }
           block
-          disabled
+          onClick={() =>
+            navigate('/expenses')
+          }
         >
           Gastos
         </ui-button>
