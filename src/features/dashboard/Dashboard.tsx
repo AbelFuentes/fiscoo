@@ -1,5 +1,13 @@
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { toast } from '@abelfuentes/ui-controls/toast';
+import {
+  getDashboardSummary,
+  type DashboardSummary,
+} from './dashboardSummary';
 import {
   orders,
   stats,
@@ -9,6 +17,9 @@ import {
 import './dashboard.css';
 
 export default function Dashboard() {
+  const [summary, setSummary] =
+    useState<DashboardSummary | null>(null);
+
   const tableRef =
     useRef<HTMLElement>(null);
 
@@ -17,6 +28,36 @@ export default function Dashboard() {
 
   const infoRef =
     useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSummary = async () => {
+      try {
+        const data =
+          await getDashboardSummary();
+
+        if (!mounted) return;
+
+        setSummary(data);
+      } catch (error) {
+        console.error(
+          'Error loading dashboard summary:',
+          error,
+        );
+
+        if (!mounted) return;
+
+        setSummary(null);
+      }
+    };
+
+    void loadSummary();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const table =
@@ -197,43 +238,54 @@ export default function Dashboard() {
       </div>
 
       <ui-grid min="13rem">
-        {stats.map((stat) => (
-          <ui-card
-            key={stat.label}
-            padding="sm"
-            variant="outlined"
-          >
-            <span
-              slot="header"
-              className="dashboard-stat-label"
-            >
-              {stat.label}
-            </span>
+        {stats.map((stat) => {
+          const value =
+            stat.label === 'Clientes'
+              ? summary === null
+                ? '—'
+                : String(
+                    summary.clients_count,
+                  )
+              : stat.value;
 
-            <div className="dashboard-stat-content">
-              <span className="dashboard-stat-value">
-                {stat.value}
+          return (
+            <ui-card
+              key={stat.label}
+              padding="sm"
+              variant="outlined"
+            >
+              <span
+                slot="header"
+                className="dashboard-stat-label"
+              >
+                {stat.label}
               </span>
 
-              <ui-badge
-                tone={
-                  stat.tone as any
+              <div className="dashboard-stat-content">
+                <span className="dashboard-stat-value">
+                  {value}
+                </span>
+
+                <ui-badge
+                  tone={
+                    stat.tone as any
+                  }
+                  size="sm"
+                >
+                  {stat.delta}
+                </ui-badge>
+              </div>
+
+              <ui-progress
+                value={
+                  stat.progress
                 }
                 size="sm"
-              >
-                {stat.delta}
-              </ui-badge>
-            </div>
-
-            <ui-progress
-              value={
-                stat.progress
-              }
-              size="sm"
-              className="dashboard-stat-progress"
-            />
-          </ui-card>
-        ))}
+                className="dashboard-stat-progress"
+              />
+            </ui-card>
+          );
+        })}
       </ui-grid>
 
       <ui-tabs
