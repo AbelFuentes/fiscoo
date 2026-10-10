@@ -10,11 +10,11 @@ import { setTheme } from '@abelfuentes/ui-controls/theme';
 
 import { useAuth } from '../auth/AuthContext';
 import {
+  getAvatarSignedUrl,
   getUserPreferences,
   saveUserPreferences,
   type UserPreferences,
   type UserPreferencesInput,
-  getAvatarSignedUrl,
 } from '../features/settings/userPreferences';
 import { ACCENTS } from '../features/settings/settings.constants';
 
@@ -166,7 +166,7 @@ export function PreferencesProvider({
       setPreferences(saved);
 
       if ('avatar_url' in updates) {
-        setAvatarVersion((current) => current + 1);
+        setAvatarVersion((version) => version + 1);
       }
 
       if (saved.accent) {
@@ -234,16 +234,9 @@ export function PreferencesProvider({
   }, [loading, updatePreferences, user]);
 
   /*
-   * Do not render the application until the user's
-   * preferences have been hydrated.
-   *
-   * This guarantees that Dashboard and Settings start
-   * with the correct theme and accent.
+   * Avatars live in a private bucket: sign a short-lived URL and
+   * refresh it before it expires.
    */
-  if (loading) {
-    return null;
-  }
-
   useEffect(() => {
     if (!avatarPath) {
       setAvatarSrc(undefined);
@@ -287,6 +280,20 @@ export function PreferencesProvider({
       }
     };
   }, [avatarPath, avatarVersion]);
+
+  /*
+   * Do not render the application until the user's
+   * preferences have been hydrated.
+   *
+   * This guarantees that Dashboard and Settings start
+   * with the correct theme and accent.
+   *
+   * Keep this early return AFTER every hook above:
+   * hooks must run in the same order on every render.
+   */
+  if (loading) {
+    return null;
+  }
 
   return (
     <PreferencesContext.Provider
