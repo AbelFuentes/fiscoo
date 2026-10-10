@@ -6,6 +6,7 @@ import {
   getInvoiceItems,
   type Invoice,
   type InvoiceItem,
+  openInvoiceFile,
 } from './userInvoices';
 import './invoice-detail.css';
 
@@ -163,6 +164,14 @@ export default function InvoiceDetail() {
     .filter(Boolean)
     .join('-');
 
+  const handleOpenFile = async (path: string) => {
+    try {
+      await openInvoiceFile(path);
+    } catch (error) {
+      console.error('Error opening file:', error);
+    }
+  };
+
   return (
     <ui-stack gap="lg">
       {renderBreadcrumb(folio ? `Factura ${folio}` : 'Factura')}
@@ -188,6 +197,32 @@ export default function InvoiceDetail() {
             </ui-badge>
           </div>
         </div>
+
+        <ui-stack direction="row" gap="sm">
+          {invoice.xml_path && (
+            <ui-button onClick={() => navigate(`/invoices/${invoice.id}/pdf`)}>
+              Ver PDF
+            </ui-button>
+          )}
+
+          {invoice.pdf_path && (
+            <ui-button
+              variant="outline"
+              onClick={() => handleOpenFile(invoice.pdf_path!)}
+            >
+              PDF original
+            </ui-button>
+          )}
+
+          {invoice.xml_path && (
+            <ui-button
+              variant="outline"
+              onClick={() => handleOpenFile(invoice.xml_path!)}
+            >
+              XML
+            </ui-button>
+          )}
+        </ui-stack>
       </div>
 
       <ui-grid min="18rem">

@@ -3,11 +3,15 @@ import { useAuth } from '../../auth/AuthContext';
 import InvoiceForm from './InvoiceForm';
 import { getClients, type Client } from '../clients/userClients';
 import { useNavigate } from 'react-router-dom';
+import ImportInvoiceForm from './ImportInvoiceForm';
+import type { ParsedCfdi } from './cfdi';
 import {
   createInvoice,
   getInvoices,
   type Invoice,
   type InvoiceInput,
+  importInvoice,
+  type InvoiceDirection,
 } from './userInvoices';
 import './invoices.css';
 
@@ -48,6 +52,11 @@ export default function Invoices() {
   const [direction, setDirection] = useState<DirectionFilter>('all');
   const [formKey, setFormKey] = useState(0);
   const [clients, setClients] = useState<Client[]>([]);
+
+  const importDrawerRef = useRef<HTMLElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importKey, setImportKey] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -185,6 +194,72 @@ export default function Invoices() {
     drawer?.close();
   };
 
+    const openImportDrawer = () => {
+    setImportError(null);
+
+    const drawer = importDrawerRef.current as any;
+
+    drawer?.show();
+  };
+
+  const closeImportDrawer = () => {
+    if (importing) {
+      return;
+    }
+
+    const drawer = importDrawerRef.current as any;
+
+    drawer?.close();
+  };
+
+  const handleImport = async (
+    cfdi: ParsedCfdi,
+    files: { xml: File; pdf?: File | null },
+    direction: InvoiceDirection,
+  ) => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      setImporting(true);
+      setImportError(null);
+
+      const invoice = await importInvoice(
+        user.id,
+        cfdi,
+        files,
+        direction,
+      );
+
+      setInvoices((current) =>
+        [invoice, ...current].sort(
+          (a, b) =>
+            new Date(b.issued_at).getTime() -
+            new Date(a.issued_at).getTime(),
+        ),
+      );
+
+      setImportKey((current) => current + 1);
+
+      const drawer = importDrawerRef.current as any;
+
+      drawer?.close();
+    } catch (error) {
+      console.error('Error importing invoice:', error);
+
+      const code = (error as { code?: string })?.code;
+
+      setImportError(
+        code === '23505'
+          ? 'Ya registraste una factura con ese UUID.'
+          : 'No se pudo importar la factura.',
+      );
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleCreate = async (input: InvoiceInput) => {
     if (!user) {
       return;
@@ -236,20 +311,26 @@ export default function Invoices() {
             </p>
           </div>
 
-          <ui-button onClick={openCreateDrawer}>
-            <svg
-              slot="start"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+          <ui-stack direction="row" gap="sm">
+            <ui-button variant="outline" onClick={openImportDrawer}>
+              Subir XML
+            </ui-button>
 
-            Nueva factura
-          </ui-button>
+            <ui-button onClick={openCreateDrawer}>
+              <svg
+                slot="start"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+
+              Nueva factura
+            </ui-button>
+          </ui-stack>
         </div>
 
         {loadError && (
@@ -356,6 +437,32 @@ export default function Invoices() {
           saving={saving}
           onSubmit={handleCreate}
           onCancel={closeCreateDrawer}
+        />
+      </ui-drawer>
+
+      <ui-drawer ref={importDrawerRef as any} size="lg">
+        {importError && (
+          <ui-alert
+            tone="danger"
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              left: '1rem',
+              right: '1rem',
+              zIndex: 10,
+            }}
+          >
+            <span slot="title">No se pudo importar</span>
+
+            {importError}
+          </ui-alert>
+        )}
+
+        <ImportInvoiceForm
+          key={importKey}
+          saving={importing}
+          onSubmit={handleImport}
+          onCancel={closeImportDrawer}
         />
       </ui-drawer>
     </>

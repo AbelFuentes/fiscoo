@@ -12,6 +12,7 @@ import Invoices from '../features/invoices/Invoices';
 import Expenses from '../features/expenses/Expenses';
 import Income from '../features/income/Income';
 import InvoiceDetail from '../features/invoices/InvoiceDetail';
+import InvoicePrint from '../features/invoices/InvoicePrint';
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -83,6 +84,15 @@ export default function AppRoutes() {
         <Route
           path="/invoices/:id"
           element={<InvoiceDetail />}
+        />
+
+        <Route
+          path="/invoices/:id/pdf"
+          element={
+            <ProtectedRoute>
+              <InvoicePrint />
+            </ProtectedRoute>
+          }
         />
       </Route>
 

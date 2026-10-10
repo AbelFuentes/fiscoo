@@ -1,0 +1,287 @@
+.ip-page {
+  min-height: 100vh;
+  padding: 1.5rem 1rem 3rem;
+  background: #e5e7eb;
+  box-sizing: border-box;
+}
+
+.ip-toolbar {
+  max-width: 210mm;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ip-paper {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 14mm;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111827;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.ip-paper p,
+.ip-paper h1,
+.ip-paper h2,
+.ip-paper h3 {
+  margin: 0;
+}
+
+.ip-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #4f46e5;
+}
+
+.ip-issuer {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.ip-muted {
+  color: #6b7280;
+}
+
+.ip-title {
+  text-align: right;
+}
+
+.ip-title h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #4f46e5;
+  letter-spacing: 0.02em;
+}
+
+.ip-folio {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ip-pill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 0.35rem;
+}
+
+.ip-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem 1.5rem;
+  margin: 1rem 0;
+}
+
+.ip-meta > div,
+.ip-payment p {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.ip-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.ip-value {
+  font-weight: 500;
+}
+
+.ip-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ip-break {
+  word-break: break-all;
+  font-size: 8.5px;
+  line-height: 1.35;
+  color: #374151;
+}
+
+.ip-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ip-box {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  background: #f9fafb;
+}
+
+.ip-box h3 {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4f46e5;
+  margin-bottom: 0.4rem;
+}
+
+.ip-strong {
+  font-weight: 700;
+}
+
+.ip-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.ip-table th {
+  background: #4f46e5;
+  color: #fff;
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.55rem;
+}
+
+.ip-table th:first-child {
+  border-top-left-radius: 0.4rem;
+}
+
+.ip-table th:last-child {
+  border-top-right-radius: 0.4rem;
+}
+
+.ip-table td {
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.ip-table tbody tr:nth-child(even) td {
+  background: #f9fafb;
+}
+
+.ip-right {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.ip-summary {
+  display: grid;
+  grid-template-columns: 1fr 14rem;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.ip-payment {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+}
+
+.ip-totals {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+}
+
+.ip-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ip-totals .ip-total {
+  margin-top: 0.3rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.5rem;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ip-footer {
+  display: grid;
+  grid-template-columns: 30mm 1fr;
+  gap: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.ip-qr {
+  width: 30mm;
+  height: 30mm;
+}
+
+.ip-seals {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ip-small {
+  font-size: 9px;
+  color: #6b7280;
+}
+
+.ip-legend {
+  margin-top: 0.9rem !important;
+  text-align: center;
+  font-size: 10px;
+  color: #6b7280;
+}
+
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .ip-page {
+    padding: 0;
+    background: #fff;
+    min-height: 0;
+  }
+
+  .ip-toolbar {
+    display: none;
+  }
+
+  .ip-paper {
+    max-width: none;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .ip-table tr,
+  .ip-footer,
+  .ip-summary {
+    break-inside: avoid;
+  }
+}

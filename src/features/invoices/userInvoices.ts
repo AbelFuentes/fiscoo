@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import type { ParsedCfdi } from './cfdi';
 
 export type InvoiceDirection = 'issued' | 'received';
 export type InvoiceStatus = 'active' | 'cancelled';
@@ -175,4 +176,141 @@ export async function getInvoiceItems(
   }
 
   return (data ?? []) as InvoiceItem[];
+}
+
+const BUCKET = 'invoices';
+
+export async function importInvoice(
+  userId: string,
+  cfdi: ParsedCfdi,
+  files: { xml: File; pdf?: File | null },
+  direction: InvoiceDirection,
+): Promise<Invoice> {
+  const uuid = cfdi.stamp.uuid.toUpperCase();
+  const xmlPath = `${userId}/${uuid}.xml`;
+  const pdfPath = files.pdf ? `${userId}/${uuid}.pdf` : null;
+
+  const { data, error } = await supabase
+    .from('invoices')
+    .insert({
+      user_id: userId,
+      direction,
+      voucher_type: cfdi.voucher_type,
+      cfdi_uuid: uuid,
+      cfdi_version: cfdi.version || null,
+      series: cfdi.series,
+      folio: cfdi.folio,
+      issued_at: cfdi.issued_at,
+      issuer_rfc: cfdi.issuer.rfc,
+      issuer_name: cfdi.issuer.name,
+      receiver_rfc: cfdi.receiver.rfc,
+      receiver_name: cfdi.receiver.name,
+      currency: cfdi.currency,
+      exchange_rate: cfdi.exchange_rate,
+      subtotal: cfdi.subtotal,
+      tax_total: cfdi.tax_total,
+      total: cfdi.total,
+      payment_method: cfdi.payment_method,
+      payment_form: cfdi.payment_form,
+      cfdi_use: cfdi.receiver.cfdi_use,
+      xml_path: xmlPath,
+      pdf_path: pdfPath,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const invoice = data as Invoice;
+
+  try {
+    if (cfdi.concepts.length > 0) {
+      const { error: itemsError } = await supabase
+        .from('invoice_items')
+        .insert(
+          cfdi.concepts.map((concept, index) => ({
+            invoice_id: invoice.id,
+            user_id: userId,
+            position: index,
+            description: concept.description,
+            product_key: concept.product_key,
+            unit_key: concept.unit_key,
+            quantity: concept.quantity,
+            unit_price: concept.unit_price,
+            amount: concept.amount,
+            tax_amount: concept.tax_amount,
+          })),
+        );
+
+      if (itemsError) throw itemsError;
+    }
+
+    const xmlUpload = await supabase.storage
+      .from(BUCKET)
+      .upload(xmlPath, files.xml, {
+        contentType: 'application/xml',
+        upsert: true,
+      });
+
+    if (xmlUpload.error) throw xmlUpload.error;
+
+    if (files.pdf && pdfPath) {
+      const pdfUpload = await supabase.storage
+        .from(BUCKET)
+        .upload(pdfPath, files.pdf, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+
+      if (pdfUpload.error) throw pdfUpload.error;
+    }
+  } catch (uploadError) {
+    await supabase
+      .from('invoices')
+      .delete()
+      .eq('user_id', userId)
+      .eq('id', invoice.id);
+
+    await supabase.storage
+      .from(BUCKET)
+      .remove(pdfPath ? [xmlPath, pdfPath] : [xmlPath]);
+
+    throw uploadError;
+  }
+
+  return invoice;
+}
+
+export async function downloadInvoiceText(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .download(path);
+
+  if (error) {
+    throw error;
+  }
+
+  return data.text();
+}
+
+export async function openInvoiceFile(path: string): Promise<void> {
+  const popup = window.open('', '_blank');
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 60);
+
+  if (error) {
+    popup?.close();
+    throw error;
+  }
+
+  if (popup) {
+    popup.opener = null;
+    popup.location.href = data.signedUrl;
+  } else {
+    window.location.href = data.signedUrl;
+  }
 }
