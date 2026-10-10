@@ -55,9 +55,7 @@ export default function AppRoutes() {
       <Route
         element={
           <ProtectedRoute>
-            <AppLayout>
-              <div />
-            </AppLayout>
+            <AppLayout />
           </ProtectedRoute>
         }
       >
