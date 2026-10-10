@@ -1,3 +1,6 @@
+const UUID_REGEX =
+  /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i;
+
 export type CfdiVoucherType = 'I' | 'E' | 'T' | 'P' | 'N';
 
 export type CfdiTax = {
@@ -107,8 +110,8 @@ export function parseCfdi(xml: string): ParsedCfdi {
 
   const tfd = doc.getElementsByTagNameNS('*', 'TimbreFiscalDigital')[0];
 
-  if (!tfd || !attr(tfd, 'UUID')) {
-    throw new Error('El CFDI no está timbrado (no tiene UUID).');
+  if (!UUID_REGEX.test(attr(tfd, 'UUID') ?? '')) {
+    throw new Error('El UUID del CFDI no es válido.');
   }
 
   const voucherType = attr(root, 'TipoDeComprobante') ?? '';
@@ -212,14 +215,15 @@ export function buildVerificationUrl(cfdi: ParsedCfdi) {
   const total = cfdi.total.toFixed(6).padStart(17, '0');
   const lastSeal = cfdi.cfdi_seal.slice(-8);
 
-  return (
-    'https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx' +
-    `?id=${cfdi.stamp.uuid}` +
-    `&re=${cfdi.issuer.rfc}` +
-    `&rr=${cfdi.receiver.rfc}` +
-    `&tt=${total}` +
-    `&fe=${lastSeal}`
-  );
+  const params = new URLSearchParams({
+    id: cfdi.stamp.uuid,
+    re: cfdi.issuer.rfc,
+    rr: cfdi.receiver.rfc,
+    tt: total,
+    fe: lastSeal,
+  });
+
+  return `https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx?${params.toString()}`;
 }
 
 export function buildOriginalChain(cfdi: ParsedCfdi) {

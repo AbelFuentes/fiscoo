@@ -2,6 +2,9 @@ import { useRef, useState } from 'react';
 import { parseCfdi, type ParsedCfdi } from './cfdi';
 import type { InvoiceDirection } from './userInvoices';
 
+const MAX_XML_BYTES = 5 * 1024 * 1024;
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
 interface ImportInvoiceFormProps {
   saving?: boolean;
   onSubmit: (
@@ -39,6 +42,11 @@ export default function ImportInvoiceForm({
     setXmlFile(null);
 
     if (!file) return;
+
+    if (file.size > MAX_XML_BYTES) {
+      setError('El XML pesa más de 5 MB.');
+      return;
+    }
 
     try {
       const parsed = parseCfdi(await file.text());
@@ -105,8 +113,22 @@ export default function ImportInvoiceForm({
         accept=".pdf,application/pdf"
         hidden
         onChange={(event) => {
-          setPdfFile(event.target.files?.[0] ?? null);
+          const file = event.target.files?.[0] ?? null;
+
           event.target.value = '';
+
+          if (file && file.type !== 'application/pdf') {
+            setError('El archivo adjunto debe ser un PDF.');
+            return;
+          }
+
+          if (file && file.size > MAX_PDF_BYTES) {
+            setError('El PDF pesa más de 10 MB.');
+            return;
+          }
+
+          setError(null);
+          setPdfFile(file);
         }}
       />
 
