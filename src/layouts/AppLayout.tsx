@@ -17,7 +17,7 @@ export default function AppLayout() {
   const location = useLocation();
 
   const { user, signOut } = useAuth();
-  const { preferences } = usePreferences();
+  const { preferences, avatarSrc } = usePreferences();
 
   const dropdownRef = useRef<HTMLElement>(null);
 
@@ -34,9 +34,6 @@ export default function AppLayout() {
     fullName ||
     user?.email ||
     'Usuario';
-
-  const avatarUrl =
-    preferences?.avatar_url || undefined;
 
   useEffect(() => {
     const dropdown = dropdownRef.current;
@@ -120,7 +117,7 @@ export default function AppLayout() {
         <ui-avatar
           slot="trigger"
           name={displayName}
-          src={avatarUrl}
+          src={avatarSrc}
           size="sm"
           status="online"
         />

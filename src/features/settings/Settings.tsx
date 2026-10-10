@@ -27,6 +27,7 @@ export default function Settings() {
 
   const {
     preferences,
+    avatarSrc,
     loading: loadingPreferences,
     updatePreferences,
   } = usePreferences();
@@ -184,14 +185,14 @@ export default function Settings() {
     try {
       setUploadingAvatar(true);
 
-      const avatarUrl =
+      const avatarPath =
         await uploadUserAvatar(
           user.id,
           file,
         );
 
       await updatePreferences({
-        avatar_url: avatarUrl,
+        avatar_url: avatarPath,
       });
 
       setDraft((current) => {
@@ -201,7 +202,7 @@ export default function Settings() {
 
         return {
           ...current,
-          avatar_url: avatarUrl,
+          avatar_url: avatarPath,
         };
       });
 
@@ -367,7 +368,7 @@ export default function Settings() {
               <div className="st-profile-header">
                 <ui-avatar
                   name={fullName}
-                  src={draft.avatar_url || undefined}
+                  src={avatarSrc}
                   size="lg"
                   status="online"
                 />
@@ -476,7 +477,6 @@ export default function Settings() {
                 maxlength={160}
                 rows={2}
                 maxrows={5}
-                hint="Aparece en tu perfil público"
                 value={draft.bio}
                 onInput={(event) => {
                   const target =

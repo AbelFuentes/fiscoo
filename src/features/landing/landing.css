@@ -21,8 +21,6 @@
   margin-inline: auto;
 }
 
-/* NAV */
-
 .landing-nav {
   position: sticky;
   top: 0;
@@ -66,8 +64,6 @@
 
   gap: 0.5rem;
 }
-
-/* HERO */
 
 .landing-hero {
   position: relative;
@@ -191,8 +187,6 @@
   margin-left: 0;
 }
 
-/* PREVIEW */
-
 .landing-preview {
   width: 100%;
 
@@ -298,8 +292,6 @@
   letter-spacing: -0.035em;
 }
 
-/* SECTIONS */
-
 .landing-section {
   width: 100%;
 
@@ -336,8 +328,6 @@
   font-size: 1.05rem;
   line-height: 1.65;
 }
-
-/* FEATURES */
 
 .landing-feature-icon {
   display: grid;
@@ -379,8 +369,6 @@
   line-height: 1.6;
 }
 
-/* SCREENSHOT / SHOWCASE */
-
 .landing-showcase {
   width: 100%;
 }
@@ -388,8 +376,6 @@
 .landing-showcase ui-card {
   width: 100%;
 }
-
-/* TESTIMONIALS */
 
 .landing-testimonial {
   height: 100%;
@@ -425,8 +411,6 @@
 
   font-size: 0.8rem;
 }
-
-/* CTA */
 
 .landing-cta {
   padding: 6rem 0;
@@ -495,8 +479,6 @@
 
   line-height: 1.6;
 }
-
-/* FOOTER */
 
 .landing-footer {
   width: 100%;

@@ -14,11 +14,15 @@ import {
   saveUserPreferences,
   type UserPreferences,
   type UserPreferencesInput,
+  getAvatarSignedUrl,
 } from '../features/settings/userPreferences';
 import { ACCENTS } from '../features/settings/settings.constants';
 
+const AVATAR_URL_TTL_SECONDS = 3600;
+
 interface PreferencesContextValue {
   preferences: UserPreferences | null;
+  avatarSrc: string | undefined;
   loading: boolean;
   updatePreferences: (
     updates: Partial<UserPreferencesInput>,
@@ -56,6 +60,14 @@ export function PreferencesProvider({
     useState<UserPreferences | null>(null);
 
   const [loading, setLoading] = useState(true);
+
+  const [avatarSrc, setAvatarSrc] = useState<string | undefined>(
+    undefined,
+  );
+
+  const [avatarVersion, setAvatarVersion] = useState(0);
+
+  const avatarPath = preferences?.avatar_url ?? null;
 
   const loadPreferences = useCallback(async () => {
     if (!user) {
@@ -153,6 +165,10 @@ export function PreferencesProvider({
 
       setPreferences(saved);
 
+      if ('avatar_url' in updates) {
+        setAvatarVersion((current) => current + 1);
+      }
+
       if (saved.accent) {
         applyAccent(saved.accent);
       }
@@ -228,10 +244,55 @@ export function PreferencesProvider({
     return null;
   }
 
+  useEffect(() => {
+    if (!avatarPath) {
+      setAvatarSrc(undefined);
+      return;
+    }
+
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const sign = async () => {
+      try {
+        const url = await getAvatarSignedUrl(
+          avatarPath,
+          AVATAR_URL_TTL_SECONDS,
+        );
+
+        if (cancelled) return;
+
+        setAvatarSrc(url);
+
+        timer = window.setTimeout(
+          sign,
+          (AVATAR_URL_TTL_SECONDS - 300) * 1000,
+        );
+      } catch (error) {
+        console.error('Failed to sign avatar url', error);
+
+        if (!cancelled) {
+          setAvatarSrc(undefined);
+        }
+      }
+    };
+
+    void sign();
+
+    return () => {
+      cancelled = true;
+
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, [avatarPath, avatarVersion]);
+
   return (
     <PreferencesContext.Provider
       value={{
         preferences,
+        avatarSrc,
         loading,
         updatePreferences,
         refreshPreferences,

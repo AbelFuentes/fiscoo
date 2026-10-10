@@ -59,6 +59,9 @@ export async function saveUserPreferences(
   return data as UserPreferences;
 }
 
+const AVATARS_BUCKET = 'avatars';
+const AVATAR_EXTENSIONS = ['jpg', 'png', 'webp'] as const;
+
 export async function uploadUserAvatar(
   userId: string,
   file: File,
@@ -70,69 +73,59 @@ export async function uploadUserAvatar(
         ? 'webp'
         : 'jpg';
 
-  const path =
-    `${userId}/avatar.${extension}`;
+  const path = `${userId}/avatar.${extension}`;
 
   const { error } = await supabase.storage
-    .from('avatars')
-    .upload(
-      path,
-      file,
-      {
-        upsert: true,
-        contentType: file.type,
-        cacheControl: '3600',
-      },
-    );
+    .from(AVATARS_BUCKET)
+    .upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+      cacheControl: '3600',
+    });
 
   if (error) {
     throw error;
   }
 
-  const {
-    data: publicUrlData,
-  } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(path);
+  const stale = AVATAR_EXTENSIONS.filter(
+    (item) => item !== extension,
+  ).map((item) => `${userId}/avatar.${item}`);
 
-  return publicUrlData.publicUrl;
+  await supabase.storage.from(AVATARS_BUCKET).remove(stale);
+
+  return path;
+}
+
+export async function getAvatarSignedUrl(
+  path: string,
+  expiresIn = 3600,
+): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(AVATARS_BUCKET)
+    .createSignedUrl(path, expiresIn);
+
+  if (error) {
+    throw error;
+  }
+
+  return data.signedUrl;
 }
 
 export async function deleteUserAvatar(
   userId: string,
-  avatarUrl: string | null,
+  avatarPath: string | null,
 ): Promise<void> {
-  if (!avatarUrl) {
+  if (!avatarPath) {
     return;
   }
 
-  const marker =
-    `/storage/v1/object/public/avatars/`;
-
-  const index =
-    avatarUrl.indexOf(marker);
-
-  if (index === -1) {
-    return;
-  }
-
-  const path =
-    avatarUrl.slice(
-      index + marker.length,
-    );
-
-  const expectedPrefix =
-    `${userId}/`;
-
-  if (!path.startsWith(expectedPrefix)) {
-    throw new Error(
-      'Invalid avatar path.',
-    );
+  if (!avatarPath.startsWith(`${userId}/`)) {
+    throw new Error('Invalid avatar path.');
   }
 
   const { error } = await supabase.storage
-    .from('avatars')
-    .remove([path]);
+    .from(AVATARS_BUCKET)
+    .remove([avatarPath]);
 
   if (error) {
     throw error;

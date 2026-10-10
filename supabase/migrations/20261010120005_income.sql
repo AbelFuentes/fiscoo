@@ -28,10 +28,43 @@ alter table public.income enable row level security;
 create policy "income_select_own" on public.income
   for select to authenticated using (user_id = (select auth.uid()));
 create policy "income_insert_own" on public.income
-  for insert to authenticated with check (user_id = (select auth.uid()));
+  for insert to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and (
+      invoice_id is null
+      or exists (
+        select 1 from public.invoices i
+        where i.id = invoice_id and i.user_id = (select auth.uid())
+      )
+    )
+    and (
+      client_id is null
+      or exists (
+        select 1 from public.clients c
+        where c.id = client_id and c.user_id = (select auth.uid())
+      )
+    )
+  );
 create policy "income_update_own" on public.income
   for update to authenticated
   using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and (
+      invoice_id is null
+      or exists (
+        select 1 from public.invoices i
+        where i.id = invoice_id and i.user_id = (select auth.uid())
+      )
+    )
+    and (
+      client_id is null
+      or exists (
+        select 1 from public.clients c
+        where c.id = client_id and c.user_id = (select auth.uid())
+      )
+    )
+  );
 create policy "income_delete_own" on public.income
   for delete to authenticated using (user_id = (select auth.uid()));

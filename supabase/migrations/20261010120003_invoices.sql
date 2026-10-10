@@ -2,15 +2,12 @@ create table public.invoices (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
 
-  direction text not null default 'received'
-    check (direction in ('issued', 'received')),
-  status text not null default 'active'
-    check (status in ('active', 'cancelled')),
+  direction text not null default 'received' check (direction in ('issued', 'received')),
+  status text not null default 'active' check (status in ('active', 'cancelled')),
 
   cfdi_uuid text not null,
   cfdi_version text,
-  voucher_type text not null default 'I'
-    check (voucher_type in ('I', 'E', 'T', 'P', 'N')),
+  voucher_type text not null default 'I' check (voucher_type in ('I', 'E', 'T', 'P', 'N')),
   series text,
   folio text,
   issued_at timestamptz not null,
@@ -60,16 +57,6 @@ create table public.invoice_items (
 
 create index invoice_items_invoice_idx on public.invoice_items (invoice_id, position);
 
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
 create trigger invoices_set_updated_at
 before update on public.invoices
 for each row execute function public.set_updated_at();
@@ -91,17 +78,38 @@ create policy "invoices_delete_own" on public.invoices
 create policy "invoice_items_select_own" on public.invoice_items
   for select to authenticated using (user_id = (select auth.uid()));
 create policy "invoice_items_insert_own" on public.invoice_items
-  for insert to authenticated with check (user_id = (select auth.uid()));
+  for insert to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and exists (
+      select 1 from public.invoices i
+      where i.id = invoice_id and i.user_id = (select auth.uid())
+    )
+  );
 create policy "invoice_items_update_own" on public.invoice_items
   for update to authenticated
   using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and exists (
+      select 1 from public.invoices i
+      where i.id = invoice_id and i.user_id = (select auth.uid())
+    )
+  );
 create policy "invoice_items_delete_own" on public.invoice_items
   for delete to authenticated using (user_id = (select auth.uid()));
 
-insert into storage.buckets (id, name, public)
-values ('invoices', 'invoices', false)
-on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('invoices', 'invoices', false, 10485760, array['application/xml', 'text/xml', 'application/pdf'])
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "invoices_files_select_own" on storage.objects;
+drop policy if exists "invoices_files_insert_own" on storage.objects;
+drop policy if exists "invoices_files_update_own" on storage.objects;
+drop policy if exists "invoices_files_delete_own" on storage.objects;
 
 create policy "invoices_files_select_own" on storage.objects
   for select to authenticated
@@ -111,7 +119,8 @@ create policy "invoices_files_insert_own" on storage.objects
   with check (bucket_id = 'invoices' and (storage.foldername(name))[1] = (select auth.uid())::text);
 create policy "invoices_files_update_own" on storage.objects
   for update to authenticated
-  using (bucket_id = 'invoices' and (storage.foldername(name))[1] = (select auth.uid())::text);
+  using (bucket_id = 'invoices' and (storage.foldername(name))[1] = (select auth.uid())::text)
+  with check (bucket_id = 'invoices' and (storage.foldername(name))[1] = (select auth.uid())::text);
 create policy "invoices_files_delete_own" on storage.objects
   for delete to authenticated
   using (bucket_id = 'invoices' and (storage.foldername(name))[1] = (select auth.uid())::text);

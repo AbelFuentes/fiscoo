@@ -27,11 +27,29 @@ alter table public.expenses enable row level security;
 create policy "expenses_select_own" on public.expenses
   for select to authenticated using (user_id = (select auth.uid()));
 create policy "expenses_insert_own" on public.expenses
-  for insert to authenticated with check (user_id = (select auth.uid()));
+  for insert to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and (
+      invoice_id is null
+      or exists (
+        select 1 from public.invoices i
+        where i.id = invoice_id and i.user_id = (select auth.uid())
+      )
+    )
+  );
 create policy "expenses_update_own" on public.expenses
   for update to authenticated
   using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and (
+      invoice_id is null
+      or exists (
+        select 1 from public.invoices i
+        where i.id = invoice_id and i.user_id = (select auth.uid())
+      )
+    )
+  );
 create policy "expenses_delete_own" on public.expenses
   for delete to authenticated using (user_id = (select auth.uid()));
-  
