@@ -139,12 +139,6 @@ export default function Invoices() {
     }
 
     table.columns = [
-      { key: 'issued_at', label: 'Fecha' },
-      { key: 'direction', label: 'Tipo' },
-      { key: 'counterpart', label: 'Emisor / Receptor' },
-      { key: 'folio', label: 'Folio' },
-      { key: 'cfdi_uuid', label: 'UUID' },
-      { key: 'total', label: 'Total' },
       {
         key: 'actions',
         label: '',
@@ -162,6 +156,12 @@ export default function Invoices() {
           return button;
         },
       },
+      { key: 'issued_at', label: 'Fecha' },
+      { key: 'direction', label: 'Tipo' },
+      { key: 'counterpart', label: 'Emisor / Receptor' },
+      { key: 'folio', label: 'Folio' },
+      { key: 'cfdi_uuid', label: 'UUID' },
+      { key: 'total', label: 'Total' },
     ];
 
     table.rows = rows;
