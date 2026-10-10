@@ -156,6 +156,19 @@ export default function Login() {
               </ui-button>
             </ui-stack>
 
+            <p style={{ textAlign: 'center', margin: 0 }}>
+              ¿No tienes cuenta?{' '}
+              <a
+                href="/register"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate('/register');
+                }}
+              >
+                Crear cuenta
+              </a>
+            </p>
+
             <ui-button
               variant="ghost"
               size="sm"

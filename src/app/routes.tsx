@@ -13,6 +13,7 @@ import Expenses from '../features/expenses/Expenses';
 import Income from '../features/income/Income';
 import InvoiceDetail from '../features/invoices/InvoiceDetail';
 import InvoicePrint from '../features/invoices/InvoicePrint';
+import Register from '../features/register/Register';
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -38,6 +39,15 @@ export default function AppRoutes() {
         element={
           <PublicRoute>
             <Login />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <Register />
           </PublicRoute>
         }
       />
