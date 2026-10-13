@@ -300,18 +300,6 @@ export default function Settings() {
       <div className="st">
         <ui-stack gap="lg">
           <div>
-            <ui-button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                navigate('/dashboard')
-              }
-            >
-              ← Volver al resumen
-            </ui-button>
-          </div>
-
-          <div>
             <h1>Ajustes</h1>
             <p>
               Cargando tus preferencias...
@@ -336,18 +324,6 @@ export default function Settings() {
   return (
     <div className="st">
       <ui-stack gap="lg">
-        <div>
-          <ui-button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              navigate('/dashboard')
-            }
-          >
-            ← Volver al resumen
-          </ui-button>
-        </div>
-
         <div>
           <h1>Ajustes</h1>
           <p>

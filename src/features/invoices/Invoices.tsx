@@ -361,6 +361,7 @@ export default function Invoices() {
 
               <ui-select
                 value={direction}
+                style={{ width: 'min(10rem,90vw)' }}
                 onchange={(event) => {
                   const target =
                     event.currentTarget as HTMLElement & {

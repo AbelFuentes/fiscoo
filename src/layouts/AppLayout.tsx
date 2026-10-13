@@ -126,10 +126,6 @@ export default function AppLayout() {
           Mi perfil
         </option>
 
-        <option value="clients">
-          Clientes
-        </option>
-
         <option data-separator />
 
         <option
